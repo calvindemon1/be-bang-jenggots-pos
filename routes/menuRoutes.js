@@ -56,6 +56,7 @@ router.get("/purchases", ctrl.getPurchases);
 router.get("/purchases/:id", ctrl.getPurchaseById);
 router.post("/purchases", ctrl.createPurchase);
 // updatePurchase dihapus biar stok ngga kacau karena edit nota
+router.put("/purchases/:id", ctrl.updatePurchase);
 router.delete("/purchases/:id", ctrl.deletePurchase);
 
 // ==========================
