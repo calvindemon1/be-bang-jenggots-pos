@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+// Pastikan nama file controller-nya bener ya (misal index.js atau menuController.js)
 const ctrl = require("../controllers/menuController");
 
 // ==========================
@@ -20,12 +21,13 @@ router.put("/menus/:id", ctrl.updateMenu);
 router.delete("/menus/:id", ctrl.deleteMenu);
 
 // ==========================
-// ORDERS ROUTES
+// ORDERS ROUTES (UPDATED)
 // ==========================
 router.get("/orders", ctrl.getOrders);
 router.get("/orders/:id", ctrl.getOrderById);
 router.post("/orders", ctrl.createOrder);
-router.put("/orders/:id", ctrl.updateOrder);
+// Ganti path dan controllernya buat update status aja (Menunggu -> Dimasak -> Selesai)
+router.put("/orders/:id/status", ctrl.updateOrderStatus);
 router.delete("/orders/:id", ctrl.deleteOrder);
 
 // ==========================
@@ -47,12 +49,18 @@ router.put("/suppliers/:id", ctrl.updateSupplier);
 router.delete("/suppliers/:id", ctrl.deleteSupplier);
 
 // ==========================
-// PURCHASES ROUTES
+// PURCHASES ROUTES (UPDATED)
 // ==========================
 router.get("/purchases", ctrl.getPurchases);
 router.get("/purchases/:id", ctrl.getPurchaseById);
 router.post("/purchases", ctrl.createPurchase);
-router.put("/purchases/:id", ctrl.updatePurchase);
+// updatePurchase dihapus biar stok ngga kacau karena edit nota
 router.delete("/purchases/:id", ctrl.deletePurchase);
+
+// ==========================
+// STOCK OPNAMES ROUTES (BARU)
+// ==========================
+router.get("/stock-opnames", ctrl.getStockOpnames);
+router.post("/stock-opnames", ctrl.createStockOpname);
 
 module.exports = router;

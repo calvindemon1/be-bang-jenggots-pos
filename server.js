@@ -1,30 +1,32 @@
 const express = require("express");
 const cors = require("cors");
-require("dotenv").config();
+const http = require("http"); // Wajib di-import
+const { Server } = require("socket.io"); // Wajib di-import
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 
-// Load Routes
-const posRoutes = require("./routes/menuRoutes");
-app.use("/api", posRoutes);
-
-app.get("/", (req, res) => res.send("API F&B Western POS mantap berjalan!"));
-
-const { Server } = require("socket.io");
-const http = require("http");
-
+// Bikin server HTTP pakai Express
 const server = http.createServer(app);
+
+// Pasang Socket.io di server HTTP tadi
 const io = new Server(server, {
-  cors: { origin: "*" }, // Izinin akses dari frontend
+  cors: { origin: "*", methods: ["GET", "POST"] },
 });
 
-// Masukin io ke global biar bisa dipake di controller
+// Masukin io ke global biar bisa dipanggil di controller (kayak pas create order)
 global.io = io;
 
-const PORT = process.env.PORT || 8448;
-app.listen(PORT, () => {
-  console.log(`🚀 Server on http://localhost:${PORT}`);
+io.on("connection", (socket) => {
+  console.log("Client connected:", socket.id);
+});
+
+// Routes lu...
+app.use("/api", require("./routes/menuRoutes"));
+
+const PORT = 8448;
+// PENTING: Gunakan server.listen, BUKAN app.listen
+server.listen(PORT, () => {
+  console.log(`Server & Socket.io jalan di port ${PORT} bro!`);
 });
