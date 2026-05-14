@@ -223,8 +223,10 @@ const getOrderById = async (req, res) => {
 const createOrder = async (req, res) => {
   const trx = await db.transaction();
   try {
+    // 1. TAMBAHIN no_wa DI DESTRUCTURING INI
     const {
       customer_name,
+      no_wa,
       table_number,
       order_type,
       payment_method,
@@ -242,10 +244,11 @@ const createOrder = async (req, res) => {
 
     const total_payment = subtotal - (subtotal * (discount_percent || 0)) / 100;
 
-    // 1. Insert Header Order
+    // 2. INSERT HEADER ORDER (MASUKIN no_wa KE SINI)
     await trx("orders").insert({
       id: orderId,
       customer_name,
+      no_wa, // <--- Data WA disave ke tabel utama order
       table_number,
       order_type: order_type || "Dine In",
       payment_method,
@@ -255,10 +258,10 @@ const createOrder = async (req, res) => {
       status: "Menunggu",
     });
 
-    // 2. Insert Detail Items (Kustomisasi Teppanyaki)
+    // 3. INSERT DETAIL ITEMS
     const orderItems = items.map((item) => ({
       order_id: orderId,
-      no_wa: item.no_wa,
+      // no_wa dihapus dari sini karena ini tabel menu/item, bukan customer
       menu_id: item.menu_id,
       qty: item.qty || 1,
       price: item.price,
