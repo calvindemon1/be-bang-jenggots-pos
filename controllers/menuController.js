@@ -623,6 +623,7 @@ module.exports = {
   getOrders,
   getOrderById,
   createOrder,
+  updateOrder,
   updateOrderStatus,
   deleteOrder,
   getInventory,
