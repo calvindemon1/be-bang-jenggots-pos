@@ -548,6 +548,85 @@ const createPurchase = async (req, res) => {
   }
 };
 
+const updatePurchase = async (req, res) => {
+  const trx = await db.transaction();
+  try {
+    const { supplier_id, status, items } = req.body;
+    const purchaseId = req.params.id;
+
+    let updateData = {};
+    if (supplier_id) updateData.supplier_id = supplier_id;
+    if (status) updateData.status = status;
+
+    // Cek apakah ada perubahan list barang (items)
+    if (items && items.length > 0) {
+      // 1. AMBIL DATA ITEM LAMA
+      const existingItems = await trx("purchase_items").where({
+        purchase_id: purchaseId,
+      });
+
+      // 2. ROLLBACK STOK LAMA (Kurangi stok inventory sesuai data belanjaan lama)
+      for (let oldItem of existingItems) {
+        await trx("inventory")
+          .where({ id: oldItem.inventory_id })
+          .update({
+            stock: db.raw(`stock - ${oldItem.qty}`),
+          });
+      }
+
+      // 3. HAPUS DATA ITEM LAMA DARI DATABASE
+      await trx("purchase_items").where({ purchase_id: purchaseId }).del();
+
+      // 4. KALKULASI DATA BARU
+      let total_cost = 0;
+      const purchaseItems = items.map((item) => {
+        const subtotal = item.qty * item.unit_price;
+        total_cost += subtotal;
+        return {
+          purchase_id: purchaseId,
+          inventory_id: item.inventory_id,
+          qty: item.qty,
+          unit_price: item.unit_price,
+          subtotal: subtotal,
+        };
+      });
+
+      updateData.total_cost = total_cost;
+
+      // 5. UPDATE HEADER PURCHASES (Total Biaya & Supplier)
+      await trx("purchases").where({ id: purchaseId }).update(updateData);
+
+      // 6. INSERT DATA ITEM BARU
+      await trx("purchase_items").insert(purchaseItems);
+
+      // 7. TAMBAH STOK BARU KE INVENTORY & UPDATE HARGA MODAL
+      for (let item of items) {
+        await trx("inventory")
+          .where({ id: item.inventory_id })
+          .update({
+            stock: db.raw(`stock + ${item.qty}`),
+            last_purchase_price: item.unit_price,
+          });
+      }
+    } else {
+      // Kalau ngga ngedit barang (misal cuma ganti status/supplier doang)
+      if (Object.keys(updateData).length > 0) {
+        await trx("purchases").where({ id: purchaseId }).update(updateData);
+      }
+    }
+
+    await trx.commit();
+    res.json({
+      success: true,
+      message:
+        "Data belanja berhasil diupdate dan stok sudah disesuaikan otomatis!",
+    });
+  } catch (error) {
+    await trx.rollback();
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 const deletePurchase = async (req, res) => {
   try {
     await db("purchases").where({ id: req.params.id }).del();
@@ -642,6 +721,7 @@ module.exports = {
   getPurchases,
   getPurchaseById,
   createPurchase,
+  updatePurchase,
   deletePurchase,
   getStockOpnames,
   createStockOpname,
