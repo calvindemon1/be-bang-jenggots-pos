@@ -295,6 +295,38 @@ const createOrder = async (req, res) => {
   }
 };
 
+// Tambahin fungsi ini bro
+const updateOrder = async (req, res) => {
+  try {
+    const { status, total, customer_name, no_wa } = req.body;
+    let updateData = {};
+
+    // 1. Cek kalau ada perubahan status (buat tracking waktu)
+    if (status) {
+      updateData.status = status;
+      if (status === "Dimasak") {
+        updateData.started_cooking_at = db.fn.now();
+      } else if (status === "Selesai") {
+        updateData.completed_at = db.fn.now();
+      }
+    }
+
+    // 2. Cek kalau ada editan data pelanggan (Nama & WA)
+    if (customer_name !== undefined) updateData.customer_name = customer_name;
+    if (no_wa !== undefined) updateData.no_wa = no_wa;
+    if (total !== undefined) updateData.total_payment = total;
+
+    await db("orders").where({ id: req.params.id }).update(updateData);
+
+    res.json({ success: true, message: "Data order berhasil diupdate!" });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// Jangan lupa di-export di bawahnya ya!
+// module.exports = { ..., updateOrder };
+
 const updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body; // "Dimasak" atau "Selesai"

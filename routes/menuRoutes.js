@@ -27,6 +27,7 @@ router.get("/orders", ctrl.getOrders);
 router.get("/orders/:id", ctrl.getOrderById);
 router.post("/orders", ctrl.createOrder);
 // Ganti path dan controllernya buat update status aja (Menunggu -> Dimasak -> Selesai)
+router.put("/orders/:id", ctrl.updateOrder);
 router.put("/orders/:id/status", ctrl.updateOrderStatus);
 router.delete("/orders/:id", ctrl.deleteOrder);
 
