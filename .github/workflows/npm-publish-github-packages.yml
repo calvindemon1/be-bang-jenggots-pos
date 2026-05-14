@@ -1,0 +1,31 @@
+name: Deploy to BE Bang Jenggot's POS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Deploy Application
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.BJGPOS_HOST }}
+          username: ${{ secrets.BJGPOS_USER }}
+          key: ${{ secrets.BJGPOS_KEY }}
+          port: 22
+          script: |
+            echo "🚀 Deploying to BE Bang Jenggot's POS server via SSH key..."
+            cd /home/bangjenggotpos/htdocs/bangjenggotspos.nexttechenterprise.site || exit
+            git fetch origin
+            git reset --hard origin/main
+            rm -rf node_modules
+            npm install
+            npm run build
+            pm2 startOrReload ecosystem.config.cjs
