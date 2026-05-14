@@ -21,11 +21,13 @@ jobs:
           key: ${{ secrets.BJGPOS_KEY }}
           port: 22
           script: |
-            echo "🚀 Deploying to BE Bang Jenggot's POS server via SSH key..."
-            cd /home/bangjenggotpos/htdocs/bangjenggotspos.nexttechenterprise.site || exit
+            echo "🚀 Deploying Backend..."
+
+            cd /home/be-banggjenggotpos/htdocs/be-bangjenggotspos.nexttechenterprise.site || exit
+
             git fetch origin
             git reset --hard origin/main
-            rm -rf node_modules
+
             npm install
-            npm run build
-            pm2 startOrReload ecosystem.config.cjs
+
+            pm2 startOrReload ecosystem.config.cjs --update-env
