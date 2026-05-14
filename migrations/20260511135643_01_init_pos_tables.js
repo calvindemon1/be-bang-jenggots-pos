@@ -5,6 +5,17 @@
 exports.up = function (knex) {
   return (
     knex.schema
+      // 0. Tabel Users (Karyawan & Akses Login)
+      .createTable("users", (table) => {
+        table.string("id").primary(); // USR-12345
+        table.string("username").notNullable().unique();
+        table.string("email").notNullable().unique();
+        table.string("password").notNullable(); // Hashed password
+        table.string("role").notNullable().defaultTo("kasir"); // admin, kasir, koki
+        table.string("status").defaultTo("Aktif"); // Aktif, Nonaktif
+        table.timestamp("created_at").defaultTo(knex.fn.now());
+      })
+
       // 1. Tabel Supplier
       .createTable("suppliers", (table) => {
         table.string("id").primary();
@@ -133,5 +144,6 @@ exports.down = function (knex) {
     .dropTableIfExists("orders")
     .dropTableIfExists("menus")
     .dropTableIfExists("inventory")
-    .dropTableIfExists("suppliers");
+    .dropTableIfExists("suppliers")
+    .dropTableIfExists("users");
 };
