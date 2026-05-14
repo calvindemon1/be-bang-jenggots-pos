@@ -76,6 +76,7 @@ exports.up = function (knex) {
         table.string("menu_id").references("id").inTable("menus");
         table.integer("qty").defaultTo(1);
         table.integer("price").notNullable(); // Harga saat dibeli (jaga-jaga harga menu berubah)
+        table.integer("no_wa").defaultTo(0); // No WA
 
         // (Point 1, 4, 5, 6, 8: Request khusus Teppanyaki)
         table.string("portion").defaultTo("1"); // "1" atau "1/2"

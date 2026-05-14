@@ -258,6 +258,7 @@ const createOrder = async (req, res) => {
     // 2. Insert Detail Items (Kustomisasi Teppanyaki)
     const orderItems = items.map((item) => ({
       order_id: orderId,
+      no_wa: item.no_wa,
       menu_id: item.menu_id,
       qty: item.qty || 1,
       price: item.price,
