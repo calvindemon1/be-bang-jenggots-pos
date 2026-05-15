@@ -468,6 +468,22 @@ const getPurchases = async (req, res) => {
       .leftJoin("suppliers", "purchases.supplier_id", "=", "suppliers.id")
       .select("purchases.*", "suppliers.name as supplier_name")
       .orderBy("created_at", "desc");
+
+    // TAMBAHAN: Ambil list item untuk masing-masing PO biar bisa di-export
+    for (let po of purchases) {
+      const items = await db("purchase_items")
+        .where({ purchase_id: po.id })
+        .leftJoin(
+          "inventory",
+          "purchase_items.inventory_id",
+          "=",
+          "inventory.id",
+        )
+        .select("purchase_items.*", "inventory.name as inventory_name");
+
+      po.items = items; // Masukin array items ke dalam object po
+    }
+
     res.json({ success: true, data: purchases });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
