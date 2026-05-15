@@ -689,6 +689,105 @@ const createStockOpname = async (req, res) => {
   }
 };
 
+// --- GET BY ID ---
+const getStockOpnameById = async (req, res) => {
+  try {
+    const record = await db("stock_opnames")
+      .where({ "stock_opnames.id": req.params.id })
+      .leftJoin("inventory", "stock_opnames.inventory_id", "=", "inventory.id")
+      .select("stock_opnames.*", "inventory.name as inventory_name")
+      .first();
+
+    if (!record)
+      return res
+        .status(404)
+        .json({ success: false, message: "Data tidak ditemukan" });
+
+    res.json({ success: true, data: record });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// --- UPDATE ---
+const updateStockOpname = async (req, res) => {
+  const trx = await db.transaction();
+  try {
+    const { actual_stock, condition, notes, checked_by } = req.body;
+    const opnameId = req.params.id;
+
+    // 1. Ambil data opname lama
+    const oldOpname = await trx("stock_opnames")
+      .where({ id: opnameId })
+      .first();
+    if (!oldOpname) {
+      await trx.rollback();
+      return res
+        .status(404)
+        .json({ success: false, message: "Data tidak ditemukan" });
+    }
+
+    // 2. Hitung selisih baru berdasarkan system_stock awal saat opname dilakukan
+    const system_stock = oldOpname.system_stock;
+    const difference_stock = actual_stock - system_stock;
+
+    // 3. Update riwayat opname
+    await trx("stock_opnames").where({ id: opnameId }).update({
+      actual_stock,
+      difference_stock,
+      condition,
+      notes,
+      checked_by,
+    });
+
+    // 4. Sesuaikan stok di tabel inventory
+    await trx("inventory")
+      .where({ id: oldOpname.inventory_id })
+      .update({ stock: actual_stock });
+
+    await trx.commit();
+    res.json({ success: true, message: "Stock opname berhasil diperbarui!" });
+  } catch (error) {
+    await trx.rollback();
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// --- DELETE ---
+const deleteStockOpname = async (req, res) => {
+  const trx = await db.transaction();
+  try {
+    const opnameId = req.params.id;
+
+    // 1. Cari datanya dulu buat ambil info stock awal sebelum opname
+    const opname = await trx("stock_opnames").where({ id: opnameId }).first();
+    if (!opname) {
+      await trx.rollback();
+      return res
+        .status(404)
+        .json({ success: false, message: "Data tidak ditemukan" });
+    }
+
+    // 2. Rollback stok inventory ke "system_stock" sebelum opname ini terjadi
+    // Ini gunanya kalau lu salah input opname dan mau ngebatalin efek perubahan stoknya
+    await trx("inventory")
+      .where({ id: opname.inventory_id })
+      .update({ stock: opname.system_stock });
+
+    // 3. Hapus record opname
+    await trx("stock_opnames").where({ id: opnameId }).del();
+
+    await trx.commit();
+    res.json({
+      success: true,
+      message: "Data opname dihapus & stok inventory dikembalikan (rollback)!",
+    });
+  } catch (error) {
+    await trx.rollback();
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 // ==========================================
 // EXPORTS SEMUA FUNGSI
 // ==========================================
@@ -724,5 +823,8 @@ module.exports = {
   updatePurchase,
   deletePurchase,
   getStockOpnames,
+  getStockOpnameById,
   createStockOpname,
+  updateStockOpname,
+  deleteStockOpname,
 };

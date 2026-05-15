@@ -63,6 +63,9 @@ router.delete("/purchases/:id", ctrl.deletePurchase);
 // STOCK OPNAMES ROUTES (BARU)
 // ==========================
 router.get("/stock-opnames", ctrl.getStockOpnames);
+router.get("/stock-opnames/:id", ctrl.getStockOpnameById);
 router.post("/stock-opnames", ctrl.createStockOpname);
+router.put("/stock-opnames/:id", ctrl.updateStockOpname);
+router.delete("/stock-opnames/:id", ctrl.deleteStockOpname);
 
 module.exports = router;
