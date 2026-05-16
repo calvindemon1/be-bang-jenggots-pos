@@ -195,6 +195,17 @@ const deleteMenu = async (req, res) => {
 const getOrders = async (req, res) => {
   try {
     const orders = await db("orders").select("*").orderBy("created_at", "desc");
+
+    // TAMBAHAN: Looping ambil items & join nama menu
+    for (let order of orders) {
+      const items = await db("order_items")
+        .where({ order_id: order.id })
+        .leftJoin("menus", "order_items.menu_id", "=", "menus.id")
+        .select("order_items.*", "menus.name as menu_name");
+
+      order.items = items;
+    }
+
     res.json({ success: true, data: orders });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
